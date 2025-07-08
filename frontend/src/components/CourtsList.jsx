@@ -20,7 +20,7 @@ const CourtsList = () => {
 
   const fetchCourts = async () => {
     try {
-      const res = await axios.get("https://dpa-d1rm.onrender.com/courts", {
+      const res = await axios.get("https://dpa-5xfw.onrender.com/courts", {
         headers: { Authorization: `Bearer ${token}` },
       });
       setCourts(res.data.court || []);
@@ -33,7 +33,7 @@ const CourtsList = () => {
     if (!newCourt.trim()) return;
     try {
       await axios.post(
-        "https://dpa-d1rm.onrender.com/courts",
+        "https://dpa-5xfw.onrender.com/courts",
         { name: newCourt },
         {
           headers: { Authorization: `Bearer ${token}` },
@@ -49,7 +49,7 @@ const CourtsList = () => {
   const deleteCourt = async (id) => {
     if (!window.confirm("هل أنت متأكد من حذف المحكمة؟")) return;
     try {
-      await axios.delete(`https://dpa-d1rm.onrender.com/courts/${id}`, {
+      await axios.delete(`https://dpa-5xfw.onrender.com/courts/${id}`, {
         headers: { Authorization: `Bearer ${token}` },
       });
       fetchCourts();

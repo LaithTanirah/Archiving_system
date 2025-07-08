@@ -51,7 +51,7 @@ const Register = () => {
 
     // Submit the form if validation passes
     axios
-      .post("https://dpa-d1rm.onrender.com/users/register", value)
+      .post("https://dpa-5xfw.onrender.com/users/register", value)
       .then((res) => {
         setMessage("تم التسجيل بنجاح!");
         setMessageType("success");
