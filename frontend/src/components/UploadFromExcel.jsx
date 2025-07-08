@@ -61,7 +61,7 @@ const ExcelUpload = () => {
     // جلب المحاكم من السيرفر عند تحميل الكومبوننت
       const fetchCourts = async () => {
         try {
-          const res = await axios.get("http://localhost:5000/courts", {
+          const res = await axios.get("https://dpa-d1rm.onrender.com/courts", {
             headers: { Authorization: `Bearer ${token}` },
           });
           setCourts(res.data.courts || res.data.court || []);
@@ -122,7 +122,7 @@ const ExcelUpload = () => {
 
     try {
       await axios.post(
-        "http://localhost:5000/legal_documents/bulk_upload",
+        "https://dpa-d1rm.onrender.com/legal_documents/bulk_upload",
         { documents: data },
         {
           headers: {

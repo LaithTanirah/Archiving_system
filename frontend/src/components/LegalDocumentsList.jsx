@@ -20,7 +20,7 @@ const LegalDocumentsList = () => {
   useEffect(() => {
     const token = localStorage.getItem("token");
     axios
-      .get("http://localhost:5000/legal_documents", {
+      .get("https://dpa-d1rm.onrender.com/legal_documents", {
         headers: { authorization: `Bearer ${token}` },
       })
       .then((res) => {

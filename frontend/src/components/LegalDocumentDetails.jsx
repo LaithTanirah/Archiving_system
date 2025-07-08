@@ -37,7 +37,7 @@ const LegalDocumentDetails = () => {
 
   useEffect(() => {
     axios
-      .get(`http://localhost:5000/legal_documents/${id}`, {
+      .get(`https://dpa-d1rm.onrender.com/legal_documents/${id}`, {
         headers: { authorization: `Bearer ${token}` },
       })
       .then((res) => {
@@ -61,7 +61,7 @@ const LegalDocumentDetails = () => {
   const handleConfirmDelete = () => {
     setConfirmOpen(false);
     axios
-      .put(`http://localhost:5000/legal_documents/delete/${id}`, null, {
+      .put(`https://dpa-d1rm.onrender.com/legal_documents/delete/${id}`, null, {
         headers: { authorization: `Bearer ${token}` },
       })
       .then(() => {
@@ -325,7 +325,7 @@ const LegalDocumentDetails = () => {
           </IconButton>
           {selectedPdf ? (
             <embed
-              src={`http://localhost:5000/${selectedPdf}`}
+              src={`https://dpa-d1rm.onrender.com/${selectedPdf}`}
               type="application/pdf"
               width="100%"
               height="100%"
