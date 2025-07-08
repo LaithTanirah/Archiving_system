@@ -36,15 +36,23 @@ const register = async (req, res) => {
 };
 
 const login = (req, res) => {
-    console.log("Body received:", req.body);
+  console.log("Body received:", req.body);
   const { email, password } = req.body;
-  console.log(req.body);
-  
 
   const query = "SELECT * FROM users WHERE email = $1";
   pool
     .query(query, [email.toLowerCase()])
     .then(async (result) => {
+      // إذا ما في نتيجة، يعني المستخدم مش موجود
+      if (result.rows.length === 0) {
+        return res.status(403).json({
+          success: false,
+          message:
+            "The email doesn’t exist or the password you’ve entered is incorrect",
+        });
+      }
+
+      // إذا كان فيه مستخدم، نكمل بمقارنة كلمة المرور
       const passwordCompare = await bcrypt.compare(
         password,
         result.rows[0].password
@@ -52,7 +60,7 @@ const login = (req, res) => {
       if (!passwordCompare) {
         return res.status(403).json({
           success: false,
-          massage:
+          message:
             "The email doesn’t exist or the password you’ve entered is incorrect",
         });
       } else {
@@ -66,34 +74,24 @@ const login = (req, res) => {
           expiresIn: "60m",
         };
         const token = jwt.sign(payload, process.env.SECRET, options);
-        res.status(200).json({
+        return res.status(200).json({
           success: true,
-          massage: "Valid login credentials",
+          message: "Valid login credentials",
           token: token,
           userId: result.rows[0].id,
         });
       }
     })
     .catch((err) => {
-      if (
-        err.message ==
-        "Cannot read properties of undefined (reading 'password')"
-      ) {
-        res.status(403).json({
-          success: false,
-          massage:
-            "The email doesn’t exist or the password you’ve entered is incorrect",
-          err: err.message,
-        });
-      } else {
-        res.status(500).json({
-          success: false,
-          message: `Server Error`,
-          err: err.message,
-        });
-      }
+      console.error(err);
+      res.status(500).json({
+        success: false,
+        message: "Server Error",
+        err: err.message,
+      });
     });
 };
+
 const getAllUsers = (req, res) => {
   const query = "SELECT * FROM users";
   pool
@@ -135,5 +133,4 @@ const deleteUser = (req, res) => {
     });
 };
 
-
-module.exports = { register, login,getAllUsers,deleteUser };
+module.exports = { register, login, getAllUsers, deleteUser };
