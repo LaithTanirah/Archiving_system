@@ -1,31 +1,38 @@
 const jwt = require("jsonwebtoken");
 
-// This function checks if the user logged in
+// دالة التحقق من تسجيل دخول المستخدم
 const authentication = (req, res, next) => {
   try {
-    if (!req.headers.authorization) {
+    const authHeader = req.headers.authorization;
+    if (!authHeader) {
       return res.status(403).json({
         success: false,
-        message: `Forbidden`,
+        message: "ممنوع الوصول بدون توكن",
       });
     }
-    const token = req.headers.authorization.split(" ").pop();
 
-    jwt.verify(token, process.env.SECRET, (err, result) => {
+    const token = authHeader.split(" ").pop();
+    if (!token) {
+      return res.status(403).json({
+        success: false,
+        message: "التوكن مفقود",
+      });
+    }
+
+    jwt.verify(token, process.env.SECRET, (err, decoded) => {
       if (err) {
-        res.status(403).json({
+        return res.status(403).json({
           success: false,
-          message: `The token is invalid or expired`,
+          message: "التوكن غير صالح أو منتهي الصلاحية",
         });
-      } else {
-        req.token = result;
-        next();
       }
+      req.token = decoded; // تخزين بيانات التوكن في الطلب
+      next();
     });
   } catch (err) {
     res.status(500).json({
       success: false,
-      message: `Server Error`,
+      message: "خطأ في الخادم",
       err: err.message,
     });
   }

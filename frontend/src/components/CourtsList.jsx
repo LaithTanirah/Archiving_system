@@ -20,20 +20,22 @@ const CourtsList = () => {
 
   const fetchCourts = async () => {
     try {
-      const res = await axios.get("https://dpa-5xfw.onrender.com/courts", {
+      const res = await axios.get("http://10.128.4.113:5000/courts", {
         headers: { Authorization: `Bearer ${token}` },
       });
-      setCourts(res.data.court || []);
+
+      setCourts(res.data.courts || []);
     } catch (err) {
       console.error("فشل في جلب المحاكم:", err.message);
     }
   };
+  console.log(courts);
 
   const addCourt = async () => {
     if (!newCourt.trim()) return;
     try {
       await axios.post(
-        "https://dpa-5xfw.onrender.com/courts",
+        "http://10.128.4.113:5000/courts",
         { name: newCourt },
         {
           headers: { Authorization: `Bearer ${token}` },
@@ -49,7 +51,7 @@ const CourtsList = () => {
   const deleteCourt = async (id) => {
     if (!window.confirm("هل أنت متأكد من حذف المحكمة؟")) return;
     try {
-      await axios.delete(`https://dpa-5xfw.onrender.com/courts/${id}`, {
+      await axios.delete(`http://10.128.4.113:5000/courts/${id}`, {
         headers: { Authorization: `Bearer ${token}` },
       });
       fetchCourts();
@@ -117,7 +119,9 @@ const CourtsList = () => {
           <thead>
             <tr>
               <th style={{ width: 70, textAlign: "center" }}>المعرف</th>
-              <th style={{ minWidth: 200, textAlign: "center" }}>اسم المحكمة</th>
+              <th style={{ minWidth: 200, textAlign: "center" }}>
+                اسم المحكمة
+              </th>
               <th style={{ width: 100, textAlign: "center" }}>إجراءات</th>
             </tr>
           </thead>

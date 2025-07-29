@@ -39,7 +39,7 @@ const UserList = () => {
   useEffect(() => {
     const fetchUsers = async () => {
       try {
-        const res = await axios.get("https://dpa-5xfw.onrender.com/users", {
+        const res = await axios.get("http://10.128.4.113:5000/users", {
           headers: {
             Authorization: `Bearer ${token}`,
           },
@@ -86,7 +86,7 @@ const UserList = () => {
 
     setDeleting(true);
     try {
-      await axios.delete(`https://dpa-5xfw.onrender.com/users/${userToDelete}`, {
+      await axios.delete(`http://10.128.4.113:5000/users/${userToDelete}`, {
         headers: { Authorization: `Bearer ${token}` },
       });
       setUsers(users.filter((user) => user.id !== userToDelete));

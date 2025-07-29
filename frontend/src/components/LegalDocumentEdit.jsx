@@ -74,7 +74,7 @@ const LegalDocumentEdit = () => {
     // جلب المحاكم
     const fetchCourts = async () => {
       try {
-        const res = await axios.get("https://dpa-5xfw.onrender.com/courts", {
+        const res = await axios.get("http://10.128.4.113:5000/courts", {
           headers: { authorization: `Bearer ${token}` },
         });
         setCourts(res.data.courts || res.data.court || []);
@@ -88,7 +88,7 @@ const LegalDocumentEdit = () => {
 
   useEffect(() => {
     axios
-      .get(`https://dpa-5xfw.onrender.com/legal_documents/${id}`, {
+      .get(`http://10.128.4.113:5000/legal_documents/${id}`, {
         headers: { authorization: `Bearer ${token}` },
       })
       .then((res) => {
@@ -178,7 +178,7 @@ const LegalDocumentEdit = () => {
   const handleOpenPreview = (file) => {
     // file ممكن يكون اسم ملف من السيرفر (string) أو ملف جديد (object)
     if (typeof file === "string") {
-      setPreviewFile(`https://dpa-5xfw.onrender.com/${file}`);
+      setPreviewFile(`http://10.128.4.113:5000/${file}`);
     } else if (file.preview) {
       setPreviewFile(file.preview);
     }
@@ -208,7 +208,7 @@ const LegalDocumentEdit = () => {
       // ارسال plaintiffs كمصفوفة JSON
       formData.append("plaintiffs", JSON.stringify(document.plaintiffs || []));
 
-      await axios.put(`https://dpa-5xfw.onrender.com/legal_documents/${id}`, formData, {
+      await axios.put(`http://10.128.4.113:5000/legal_documents/${id}`, formData, {
         headers: {
           authorization: `Bearer ${token}`,
           "Content-Type": "multipart/form-data",

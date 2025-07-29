@@ -83,7 +83,7 @@ const CaseForm = () => {
   useEffect(() => {
     const fetchCourts = async () => {
       try {
-        const res = await axios.get("https://dpa-5xfw.onrender.com/courts", {
+        const res = await axios.get("http://10.128.4.113:5000/courts", {
           headers: { authorization: `Bearer ${token}` },
         });
         setCourts(res.data.court || res.data.courts || []);
@@ -185,7 +185,7 @@ const CaseForm = () => {
 
     try {
       const res = await axios.post(
-        "https://dpa-5xfw.onrender.com/legal_documents",
+        "http://10.128.4.113:5000/legal_documents",
         data,
         {
           headers: {

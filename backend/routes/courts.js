@@ -1,17 +1,18 @@
 const express = require("express");
 const router = express.Router();
 const {
-  createcourt,
-  getAllcourts,
-  deleteCourt,
+  createCourt,
+  getAllCourts,
   getCourtById,
+  deleteCourt,
+  updateCourt,
 } = require("../controllers/courts");
 
 // إضافة محكمة جديدة
-router.post("/", createcourt);
+router.post("/", createCourt);
 
 // جلب كل المحاكم
-router.get("/", getAllcourts);
+router.get("/", getAllCourts);
 
 // جلب محكمة حسب المعرف
 router.get("/:id", getCourtById);

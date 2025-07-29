@@ -26,7 +26,7 @@ const App = () => {
           <Route index element={<Register />} />
           <Route path="register" element={<Register />} />
           <Route path="users" element={<UserList />} />
-          <Route path="courts" element={<CourtsPage />} /> {/* ✅ إدارة المحاكم */}
+          <Route path="courts" element={<CourtsPage />} />
         </Route>
       </Route>
 

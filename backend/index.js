@@ -22,5 +22,6 @@ app.use("/courts", courtsRoutes);
 app.use("*", (req, res) => res.status(404).json("NO content at this path"));
 
 app.listen(PORT, '0.0.0.0', () => {
-  console.log(`Server listening on port ${PORT}`);
+  console.log(`Server listening at http://localhost:${PORT}`);
 });
+

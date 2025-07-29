@@ -31,7 +31,7 @@ const SearchResults = () => {
       try {
         const token = localStorage.getItem("token");
         const response = await axios.get(
-          `https://dpa-5xfw.onrender.com/legal_documents/search/${q}`,
+          `http://10.128.4.113:5000/legal_documents/search/${q}`,
           {
             headers: {
               Authorization: `Bearer ${token}`,

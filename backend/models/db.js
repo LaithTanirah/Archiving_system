@@ -1,17 +1,28 @@
-// connecting to PostgreSQL
-const pg = require("pg");
+const sql = require("mssql");
 
-const pool = new pg.Pool({
-  connectionString: process.env.CONNECTION_STRING,
-});
+const config = {
+  server: "localhost",
+  port: 49840,
+  database: "Laith",
+  user: "sa",
+  password: "gDhd$9567",
+  options: {
+    encrypt: true,
+    trustServerCertificate: true,
+  }
+};
 
-pool
-  .connect()
-  .then(() => {
-    console.log("Db Connected");
-  })
+const pool = new sql.ConnectionPool(config);
+const poolPromise = pool.connect();
+
+poolPromise
+  .then(() => console.log("✅ Connected to SQL Server"))
   .catch((err) => {
-    console.log("Error: ", err);
+    console.error("❌ Connection failed:", err);
+    process.exit(1);
   });
 
-module.exports = pool;
+module.exports = {
+  sql,
+  poolPromise,
+};
