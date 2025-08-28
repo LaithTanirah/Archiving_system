@@ -1,14 +1,21 @@
 const multer = require("multer");
 const path = require("path");
+const fs = require("fs");
+
+// التأكد من وجود مجلد uploads
+const uploadDir = "./uploads";
+if (!fs.existsSync(uploadDir)) {
+  fs.mkdirSync(uploadDir);
+}
 
 // تحديد مكان حفظ الملفات وطريقة التسمية
 const storage = multer.diskStorage({
   destination: function (req, file, cb) {
-    cb(null, "uploads/"); // تأكد من وجود مجلد uploads في المشروع
+    cb(null, uploadDir);
   },
   filename: function (req, file, cb) {
     const uniqueSuffix = Date.now() + "-" + Math.round(Math.random() * 1e9);
-    cb(null, uniqueSuffix + path.extname(file.originalname)); // مثال: 1689231231-123456789.pdf
+    cb(null, uniqueSuffix + path.extname(file.originalname));
   },
 });
 
@@ -25,11 +32,11 @@ const fileFilter = (req, file, cb) => {
   }
 };
 
-// تهيئة multer مع تحديد الحجم الأقصى (10 ميجا بايت)
+// تهيئة multer مع حجم أكبر (50 ميجا) وقبول عدة ملفات بدون حد أعلى
 const upload = multer({
   storage,
   fileFilter,
-  limits: { fileSize: 10 * 1024 * 1024 },
+  limits: { fileSize: 50 * 1024 * 1024 }, // 50 ميجا لكل ملف
 });
 
 module.exports = upload;

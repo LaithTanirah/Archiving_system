@@ -1,3 +1,4 @@
+"use client";
 import React, { useState, useEffect } from "react";
 import axios from "axios";
 import {
@@ -49,39 +50,78 @@ const fieldMap = {
   "تاريخ الكتاب الصادر": "outgoing_document_date",
 };
 
+const LOCAL_STORAGE_KEY = "caseFormData";
+
+const getInitialState = () => {
+  if (typeof window !== "undefined") {
+    const savedData = localStorage.getItem(LOCAL_STORAGE_KEY);
+    if (savedData) {
+      try {
+        return JSON.parse(savedData);
+      } catch {
+        return null;
+      }
+    }
+  }
+  return null;
+};
+
 const CaseForm = () => {
-  const [formData, setFormData] = useState({
-    "رقم الكتاب": "",
-    "تاريخ الكتاب": "",
-    "اسم المحكمة": "",
-    court_id: "",
-    المخيم: "",
-    "رقم القطعة": "",
-    "رقم الحوض": "",
-    البيان: "",
-    "رقم الكتاب الصادر": "",
-    "تاريخ الكتاب الصادر": "",
-  });
+  const saved = getInitialState();
 
-  // مصفوفة المدعين: كل مدعي عنده اسم ورقم وطني
-  const [plaintiffs, setPlaintiffs] = useState([
-    { plaintiff_name: "", national_id: "" },
-  ]);
+  const [formData, setFormData] = useState(
+    saved?.formData || {
+      "رقم الكتاب": "",
+      "تاريخ الكتاب": "",
+      "اسم المحكمة": "",
+      court_id: "",
+      المخيم: "",
+      "رقم القطعة": "",
+      "رقم الحوض": "",
+      البيان: "",
+      "رقم الكتاب الصادر": "",
+      "تاريخ الكتاب الصادر": "",
+    }
+  );
 
-  const [caseYear, setCaseYear] = useState(new Date().getFullYear());
-  const [caseNumberPart, setCaseNumberPart] = useState("");
+  const [plaintiffs, setPlaintiffs] = useState(
+    saved?.plaintiffs || [{ plaintiff_name: "", national_id: "" }]
+  );
+
+  const [caseYear, setCaseYear] = useState(
+    saved?.caseYear || new Date().getFullYear()
+  );
+  const [caseNumberPart, setCaseNumberPart] = useState(
+    saved?.caseNumberPart || ""
+  );
+
   const [images, setImages] = useState([]);
-  const [previewURLs, setPreviewURLs] = useState([]);
+  const [previewURLs, setPreviewURLs] = useState(saved?.previewURLs || []);
+
   const [open, setOpen] = useState(false);
   const [confirmOpen, setConfirmOpen] = useState(false);
   const [message, setMessage] = useState("");
   const [messageType, setMessageType] = useState("success");
+  const [errors, setErrors] = useState([]);
   const [courts, setCourts] = useState([]);
 
-  const token = localStorage.getItem("token");
+  const token =
+    typeof window !== "undefined" ? localStorage.getItem("token") : "";
+
+  useEffect(() => {
+    const dataToSave = {
+      formData,
+      plaintiffs,
+      caseYear,
+      caseNumberPart,
+      previewURLs,
+    };
+    localStorage.setItem(LOCAL_STORAGE_KEY, JSON.stringify(dataToSave));
+  }, [formData, plaintiffs, caseYear, caseNumberPart, previewURLs]);
 
   useEffect(() => {
     const fetchCourts = async () => {
+      if (!token) return;
       try {
         const res = await axios.get("http://10.128.4.113:5000/courts", {
           headers: { authorization: `Bearer ${token}` },
@@ -101,19 +141,16 @@ const CaseForm = () => {
     }));
   };
 
-  // تحديث بيانات المدعي عند index معين
   const handlePlaintiffChange = (index, field, value) => {
     const newPlaintiffs = [...plaintiffs];
     newPlaintiffs[index][field] = value;
     setPlaintiffs(newPlaintiffs);
   };
 
-  // إضافة مدعي جديد
   const addPlaintiff = () => {
     setPlaintiffs([...plaintiffs, { plaintiff_name: "", national_id: "" }]);
   };
 
-  // حذف مدعي حسب index
   const removePlaintiff = (index) => {
     setPlaintiffs(plaintiffs.filter((_, i) => i !== index));
   };
@@ -139,24 +176,49 @@ const CaseForm = () => {
     return years.reverse();
   };
 
-  // التحقق من صحة الحقول بما فيها المدعين
-  const isValidForm = () => {
-    const mainFieldsValid = Object.entries(formData)
+  const validateForm = () => {
+    const newErrors = [];
+    Object.entries(formData)
       .filter(([key]) => key !== "court_id")
-      .every(([_, val]) => typeof val === "string" && val.trim() !== "");
+      .forEach(([key, val]) => {
+        if (!val || val.trim() === "") newErrors.push(`الحقل "${key}" مطلوب`);
+      });
 
-    const plaintiffsValid = plaintiffs.every((p) => {
+    plaintiffs.forEach((p, idx) => {
       const name = p.plaintiff_name.trim();
       const id = p.national_id.trim();
-      return (name === "" && id === "") || (name !== "" && /^\d{10}$/.test(id));
+
+      // إذا الحقلين فاضيين تجاهل
+      if (name === "" && id === "") return;
+
+      // إذا في رقم وطني لازم يكون 10 أرقام
+      if (id !== "" && !/^\d{10}$/.test(id)) {
+        newErrors.push(
+          `الرقم الوطني للمدعي رقم ${idx + 1} غير صحيح يجب إدخال 10 أرقام`
+        );
+      }
+
+      // إذا في رقم وطني بدون اسم → خطأ
+      if (id !== "" && name === "") {
+        newErrors.push(`اسم المدعي رقم ${idx + 1} مطلوب عند إدخال رقم وطني`);
+      }
     });
 
-    return mainFieldsValid && plaintiffsValid && caseNumberPart.trim() !== "";
+    if (!caseNumberPart.trim()) newErrors.push("رقم القضية مطلوب");
+
+    setErrors(newErrors);
+    return newErrors.length === 0;
   };
 
   const handleSubmit = async () => {
-    const data = new FormData();
+    if (!validateForm()) {
+      setMessageType("error");
+      setMessage("يرجى تصحيح الأخطاء التالية:");
+      setOpen(true);
+      return;
+    }
 
+    const data = new FormData();
     for (const [arKey, enKey] of Object.entries(fieldMap)) {
       if (arKey === "اسم المحكمة") {
         data.append("court_id", formData["court_id"] || "");
@@ -164,43 +226,29 @@ const CaseForm = () => {
         data.append(enKey, formData[arKey] || "");
       }
     }
-
     data.append("case_number", `${caseYear}/${caseNumberPart}`);
 
-    // ✅ فقط المدعين الصالحين
-    const validPlaintiffs = plaintiffs.filter(
-      (p) =>
-        p.plaintiff_name.trim() !== "" && /^\d{10}$/.test(p.national_id.trim())
-    );
-
-    validPlaintiffs.forEach((plaintiff, idx) => {
-      data.append(
-        `plaintiffs[${idx}][plaintiff_name]`,
-        plaintiff.plaintiff_name
-      );
-      data.append(`plaintiffs[${idx}][national_id]`, plaintiff.national_id);
-    });
+    plaintiffs
+      .filter((p) => p.plaintiff_name && /^\d{10}$/.test(p.national_id))
+      .forEach((p, idx) => {
+        data.append(`plaintiffs[${idx}][plaintiff_name]`, p.plaintiff_name);
+        data.append(`plaintiffs[${idx}][national_id]`, p.national_id);
+      });
 
     images.forEach((file) => data.append("documents", file));
 
     try {
-      const res = await axios.post(
-        "http://10.128.4.113:5000/legal_documents",
-        data,
-        {
-          headers: {
-            authorization: `Bearer ${token}`,
-            "Content-Type": "multipart/form-data",
-          },
-        }
-      );
-
+      await axios.post("http://10.128.4.113:5000/legal_documents", data, {
+        headers: {
+          authorization: `Bearer ${token}`,
+          "Content-Type": "multipart/form-data",
+        },
+      });
       setMessage("تم إرسال البيانات بنجاح!");
       setMessageType("success");
       setOpen(true);
       setConfirmOpen(false);
-
-      // إعادة تعيين الحقول
+      localStorage.removeItem(LOCAL_STORAGE_KEY);
       setFormData({
         "رقم الكتاب": "",
         "تاريخ الكتاب": "",
@@ -217,16 +265,18 @@ const CaseForm = () => {
       setPlaintiffs([{ plaintiff_name: "", national_id: "" }]);
       setImages([]);
       setPreviewURLs([]);
+      setErrors([]);
     } catch (error) {
-      setMessage("حدث خطأ أثناء الإرسال، الرجاء المحاولة لاحقًا.");
+      setMessage(error.response.data.message);
       setMessageType("error");
       setOpen(true);
-      console.error("Error posting data:", error);
+      console.error(error);
     }
   };
 
   return (
     <>
+      {/* Form */}
       <Sheet
         sx={{
           maxWidth: 700,
@@ -240,18 +290,17 @@ const CaseForm = () => {
         <Typography level="h3" textAlign="center" mb={2}>
           إضافة مستند قانوني جديد
         </Typography>
-
         <form
           onSubmit={(e) => {
             e.preventDefault();
-            if (isValidForm()) setConfirmOpen(true);
+            setConfirmOpen(true);
           }}
           encType="multipart/form-data"
         >
           <Stack spacing={2}>
             {Object.entries(formData).map(([key, value]) =>
               key === "اسم المحكمة" ? (
-                <FormControl required>
+                <FormControl required key={key}>
                   <FormLabel>اسم المحكمة</FormLabel>
                   <Select
                     name="court_id"
@@ -309,38 +358,21 @@ const CaseForm = () => {
                     name={key}
                     value={value}
                     onChange={handleChange}
-                    error={key === "الرقم الوطني" && !/^\d{0,10}$/.test(value)}
                   />
-                  {key === "الرقم الوطني" &&
-                    value &&
-                    !/^\d{10}$/.test(value) && (
-                      <Typography level="body-sm" color="danger" mt={0.5}>
-                        الرقم الوطني يجب أن يتكون من 10 أرقام.
-                      </Typography>
-                    )}
                 </FormControl>
               )
             )}
 
-            {/* حقول المدعين */}
+            {/* Plaintiffs */}
             <FormLabel>المدعين</FormLabel>
-            {plaintiffs.map((plaintiff, index) => (
-              <Stack
-                direction="row"
-                spacing={2}
-                key={index}
-                alignItems="flex-end"
-              >
+            {plaintiffs.map((p, i) => (
+              <Stack direction="row" spacing={2} key={i} alignItems="flex-end">
                 <FormControl sx={{ flex: 2 }}>
                   <FormLabel>اسم المدعي</FormLabel>
                   <Input
-                    value={plaintiff.plaintiff_name}
+                    value={p.plaintiff_name}
                     onChange={(e) =>
-                      handlePlaintiffChange(
-                        index,
-                        "plaintiff_name",
-                        e.target.value
-                      )
+                      handlePlaintiffChange(i, "plaintiff_name", e.target.value)
                     }
                     placeholder="اسم المدعي"
                   />
@@ -348,30 +380,24 @@ const CaseForm = () => {
                 <FormControl sx={{ flex: 2 }}>
                   <FormLabel>الرقم الوطني</FormLabel>
                   <Input
-                    value={plaintiff.national_id}
+                    value={p.national_id}
                     onChange={(e) =>
-                      handlePlaintiffChange(
-                        index,
-                        "national_id",
-                        e.target.value
-                      )
+                      handlePlaintiffChange(i, "national_id", e.target.value)
                     }
                     placeholder="الرقم الوطني"
                   />
                 </FormControl>
-                {index > 0 && (
+                {i > 0 && (
                   <IconButton
                     variant="outlined"
                     color="danger"
-                    onClick={() => removePlaintiff(index)}
-                    sx={{ mb: 1 }}
+                    onClick={() => removePlaintiff(i)}
                   >
                     <Delete />
                   </IconButton>
                 )}
               </Stack>
             ))}
-
             <Button
               variant="outlined"
               onClick={addPlaintiff}
@@ -380,7 +406,7 @@ const CaseForm = () => {
               + إضافة مدعي
             </Button>
 
-            {/* رقم القضية (سنة / رقم) */}
+            {/* Case Number */}
             <FormLabel>رقم القضية</FormLabel>
             <Stack direction="row" spacing={2}>
               <FormControl required sx={{ flex: 1 }}>
@@ -389,26 +415,26 @@ const CaseForm = () => {
                   onChange={(e, newVal) => setCaseYear(newVal)}
                   placeholder="السنة"
                 >
-                  {generateYears().map((year) => (
-                    <Option key={year} value={year}>
-                      {year}
+                  {generateYears().map((y) => (
+                    <Option key={y} value={y}>
+                      {y}
                     </Option>
                   ))}
                 </Select>
               </FormControl>
               <FormControl required sx={{ flex: 2 }}>
                 <Input
-                  placeholder="رقم القضية"
                   value={caseNumberPart}
                   onChange={(e) => setCaseNumberPart(e.target.value)}
+                  placeholder="رقم القضية"
                 />
               </FormControl>
             </Stack>
 
+            {/* Files */}
             <FormControl>
               <FormLabel>رفع الملفات (PDF)</FormLabel>
               <Input
-                name="documents"
                 type="file"
                 accept="application/pdf"
                 multiple
@@ -418,7 +444,7 @@ const CaseForm = () => {
                 <ul style={{ marginTop: 8 }}>
                   {images.map((file, idx) => (
                     <li key={idx}>
-                      {file.name}
+                      {file.name}{" "}
                       <IconButton
                         size="sm"
                         variant="soft"
@@ -441,6 +467,7 @@ const CaseForm = () => {
         </form>
       </Sheet>
 
+      {/* Result Modal */}
       <Modal
         open={open}
         onClose={() => setOpen(false)}
@@ -448,7 +475,7 @@ const CaseForm = () => {
       >
         <Sheet
           variant="outlined"
-          sx={{ maxWidth: 400, borderRadius: "md", p: 3, textAlign: "center" }}
+          sx={{ maxWidth: 400, p: 3, textAlign: "center", borderRadius: "md" }}
         >
           <ModalClose />
           {messageType === "success" ? (
@@ -456,10 +483,21 @@ const CaseForm = () => {
           ) : (
             <ErrorOutline sx={{ fontSize: 60, color: "error.main", mb: 2 }} />
           )}
-          <Typography level="h5">{message}</Typography>
+          {messageType === "error" && errors.length > 0 ? (
+            <ul style={{ textAlign: "right" }}>
+              {errors.map((e, idx) => (
+                <li key={idx} style={{ color: "red" }}>
+                  {e}
+                </li>
+              ))}
+            </ul>
+          ) : (
+            <Typography level="h5">{message}</Typography>
+          )}
         </Sheet>
       </Modal>
 
+      {/* Confirm Modal */}
       <Modal
         open={confirmOpen}
         onClose={() => setConfirmOpen(false)}
@@ -477,10 +515,10 @@ const CaseForm = () => {
                 .map((p) => `${p.plaintiff_name} (${p.national_id})`)
                 .join(", "),
               "رقم القضية": `${caseYear}/${caseNumberPart}`,
-            }).map(([key, val]) => (
-              <Typography key={key} textAlign="right">
-                <strong>{key}: </strong>
-                {Array.isArray(val) ? val.join(", ") : val}
+            }).map(([k, v]) => (
+              <Typography key={k}>
+                <strong>{k}: </strong>
+                {Array.isArray(v) ? v.join(", ") : v}
               </Typography>
             ))}
           </Stack>
@@ -492,12 +530,7 @@ const CaseForm = () => {
             >
               إلغاء
             </Button>
-            <Button
-              variant="solid"
-              color="primary"
-              onClick={handleSubmit}
-              disabled={!isValidForm()}
-            >
+            <Button variant="solid" color="primary" onClick={handleSubmit}>
               إرسال
             </Button>
           </DialogActions>

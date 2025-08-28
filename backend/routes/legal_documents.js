@@ -18,31 +18,26 @@ const authentication = require("../middleware/authentication");
 legalDocumentsRouter.post(
   "/",
   authentication,
-  upload.array("documents", 10), // 10 هو الحد الأقصى لعدد الملفات
+  upload.array("documents"), // أي عدد من الملفات بدون حد أعلى
   createLegalDocuments
 );
 
 legalDocumentsRouter.get("/", authentication, getAllLegalDocuments);
+
+// وضع search قبل :id لتجنب التعارض
+legalDocumentsRouter.get("/search/:q", authentication, searchLegalDocuments);
+
 legalDocumentsRouter.get("/:id", authentication, getLegalDocumentById);
+
 legalDocumentsRouter.put(
   "/:id",
   authentication,
-  upload.array("documents", 10),
+  upload.array("documents"), // أي عدد من الملفات
   updateLegalDocumentById
 );
 
-legalDocumentsRouter.put(
-  "/delete/:id",
-  authentication,
-  deleteLegalDocumentById
-);
+legalDocumentsRouter.put("/delete/:id", authentication, deleteLegalDocumentById);
 
-legalDocumentsRouter.post(
-  "/bulk_upload",
-  authentication,
-  bulkUploadLegalDocuments
-);
-
-legalDocumentsRouter.get("/search/:q", authentication, searchLegalDocuments);
+legalDocumentsRouter.post("/bulk_upload", authentication, bulkUploadLegalDocuments);
 
 module.exports = legalDocumentsRouter;

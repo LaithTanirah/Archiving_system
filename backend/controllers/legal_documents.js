@@ -318,8 +318,9 @@ const deleteLegalDocumentById = async (req, res) => {
 
 const searchLegalDocuments = async (req, res) => {
   try {
-    const { case_number, court_name } = req.query;
+    const q = req.params.q; // استلام قيمة البحث من :q
     const pool = await poolPromise;
+console.log(q);
 
     let query = `
       SELECT ld.*, c.name AS court_name
@@ -329,13 +330,10 @@ const searchLegalDocuments = async (req, res) => {
     `;
     const reqDb = pool.request();
 
-    if (case_number) {
-      query += " AND ld.case_number LIKE @case_number";
-      reqDb.input("case_number", sql.NVarChar, `%${case_number}%`);
-    }
-    if (court_name) {
-      query += " AND c.name LIKE @court_name";
-      reqDb.input("court_name", sql.NVarChar, `%${court_name}%`);
+    if (q) {
+      // البحث في رقم القضية واسم المحكمة معًا
+      query += " AND (ld.case_number LIKE @q OR c.name LIKE @q)";
+      reqDb.input("q", sql.NVarChar, `%${q}%`);
     }
 
     const result = await reqDb.query(query);
@@ -354,6 +352,7 @@ const searchLegalDocuments = async (req, res) => {
     });
   }
 };
+
 
 const bulkUploadLegalDocuments = async (req, res) => {
   try {

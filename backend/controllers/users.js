@@ -90,7 +90,7 @@ const login = async (req, res) => {
       lastname: user.lastname,
     };
 
-    const token = jwt.sign(payload, process.env.SECRET, { expiresIn: "60m" });
+    const token = jwt.sign(payload, process.env.SECRET, { expiresIn: "2h" });
 
     res.status(200).json({
       success: true,

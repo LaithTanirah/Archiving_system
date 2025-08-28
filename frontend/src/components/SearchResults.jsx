@@ -17,13 +17,14 @@ const SearchResults = () => {
   const navigate = useNavigate();
   const [documents, setDocuments] = useState([]);
   const [loading, setLoading] = useState(true);
-  const [query, setQuery] = useState("");
+  const [query, setQuery] = useState(" ");
   const [error, setError] = useState(null);
 
   useEffect(() => {
-    const searchParams = new URLSearchParams(location.search);
-    const q = searchParams.get("q") || "";
-    setQuery(q);
+    // استلام قيمة البحث من path param
+    const pathParts = location.pathname.split("/");
+    const qFromPath = decodeURIComponent(pathParts[pathParts.length - 1] || "");
+    setQuery(qFromPath);
 
     const fetchData = async () => {
       setLoading(true);
@@ -31,7 +32,7 @@ const SearchResults = () => {
       try {
         const token = localStorage.getItem("token");
         const response = await axios.get(
-          `http://10.128.4.113:5000/legal_documents/search/${q}`,
+          `http://10.128.4.113:5000/legal_documents/search/${encodeURIComponent(qFromPath)}`,
           {
             headers: {
               Authorization: `Bearer ${token}`,
@@ -41,17 +42,18 @@ const SearchResults = () => {
         setDocuments(response.data.data);
       } catch (err) {
         console.error("خطأ في جلب نتائج البحث:", err.message);
-        setError("حدث خطأ أثناء محاولة جلب النتائج. الرجاء المحاولة لاحقًا.");
+        setError("لا يوجد بحث مطابق");
       } finally {
         setLoading(false);
       }
     };
 
     fetchData();
-  }, [location.search]);
+  }, [location.pathname]);
 
   return (
     <Box>
+      {/* شريط البحث */}
       <Box display="flex" gap={1} mb={2}>
         <Input
           placeholder="اكتب كلمة البحث..."
@@ -60,21 +62,29 @@ const SearchResults = () => {
           sx={{ flex: 1 }}
           size="sm"
         />
-        <Button size="sm" onClick={() => navigate(`/dashboard/search?q=${encodeURIComponent(query)}`)}>
+        <Button
+          size="sm"
+          onClick={() =>
+            navigate(`/dashboard/search/${encodeURIComponent(query)}`)
+          }
+        >
           بحث
         </Button>
       </Box>
 
+      {/* عنوان النتائج */}
       <Typography level="h4" mb={1}>
-        نتائج البحث عن: "{query || '...' }"
+        نتائج البحث عن: "{query || '...'}"
       </Typography>
 
+      {/* رسالة الخطأ */}
       {error && (
         <Typography level="body-md" color="danger" mb={1}>
           {error}
         </Typography>
       )}
 
+      {/* حالة التحميل */}
       {loading ? (
         <Box display="flex" justifyContent="center" my={3}>
           <CircularProgress size="sm" />
@@ -115,7 +125,11 @@ const SearchResults = () => {
                     المحكمة: <strong>{doc.court_name || "—"}</strong>
                   </Typography>
                   <Typography level="body-xs">
-                    المدعي: <strong>{doc.plaintiff_name || "—"}</strong>
+                    المدعي: <strong>
+                      {doc.plaintiffs && doc.plaintiffs.length > 0
+                        ? doc.plaintiffs.map(p => p.plaintiff_name).join(", ")
+                        : "—"}
+                    </strong>
                   </Typography>
                 </Box>
 

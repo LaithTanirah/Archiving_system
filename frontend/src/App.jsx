@@ -36,7 +36,7 @@ const App = () => {
         <Route path="legal_documents" element={<LegalDocumentsList />} />
         <Route path="legal_documents/:id" element={<LegalDocumentDetails />} />
         <Route path="legal_documents/edit/:id" element={<LegalDocumentEdit />} />
-        <Route path="search" element={<SearchResults />} />
+        <Route path="search/:q?" element={<SearchResults />} />
         <Route path="bulk_upload" element={<ExcelUpload />} />
       </Route>
     </Routes>
