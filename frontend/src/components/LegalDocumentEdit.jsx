@@ -100,7 +100,9 @@ const LegalDocumentEdit = () => {
             ["incoming_date", "outgoing_document_date"].includes(key) &&
             apiDoc[key]
           ) {
-            doc[fieldMap[key]] = new Date(apiDoc[key]).toISOString().split("T")[0];
+            doc[fieldMap[key]] = new Date(apiDoc[key])
+              .toISOString()
+              .split("T")[0];
           } else {
             doc[fieldMap[key]] = apiDoc[key] || "";
           }
@@ -132,13 +134,21 @@ const LegalDocumentEdit = () => {
   const handleChange = (name, value) => {
     setDocument((prev) => ({ ...prev, [name]: value }));
   };
-
   const handlePlaintiffChange = (index, field, value) => {
     const newPlaintiffs = [...(document.plaintiffs || [])];
+
     newPlaintiffs[index] = {
       ...newPlaintiffs[index],
       [field]: value,
     };
+
+    if (field === "national_id") {
+      const nationalId = value.trim();
+      // الرقم الوطني يجب أن يكون 10 أرقام أو فارغ
+      newPlaintiffs[index].error =
+        nationalId !== "" && !/^\d{10}$/.test(nationalId);
+    }
+
     setDocument((prev) => ({ ...prev, plaintiffs: newPlaintiffs }));
   };
 
@@ -151,7 +161,10 @@ const LegalDocumentEdit = () => {
   const handleAddPlaintiff = () => {
     setDocument((prev) => ({
       ...prev,
-      plaintiffs: [...(prev.plaintiffs || []), { plaintiff_name: "", national_id: "" }],
+      plaintiffs: [
+        ...(prev.plaintiffs || []),
+        { plaintiff_name: "", national_id: "" }, // فقط اسم المدعي
+      ],
     }));
   };
 
@@ -184,9 +197,28 @@ const LegalDocumentEdit = () => {
     }
     setPreviewModalOpen(true);
   };
-
   const handleUpdate = async () => {
     try {
+      // تحقق من وجود أرقام وطنية خاطئة
+      const hasInvalidNationalId = (document.plaintiffs || []).some(
+        (p) =>
+          p.national_id !== "" &&
+          p.national_id !== null &&
+          !/^\d{10}$/.test(p.national_id)
+      );
+
+      if (hasInvalidNationalId) {
+        setModalMessage("الرقم الوطني يجب أن يكون 10 أرقام أو يُترك فارغًا");
+        setModalSeverity("error");
+        setModalOpen(true);
+        return; // إيقاف عملية الحفظ
+      }
+
+      // تصفية المدعين اللي عندهم اسم فقط
+      const validPlaintiffs = (document.plaintiffs || []).filter(
+        (p) => p.plaintiff_name && p.plaintiff_name.trim() !== ""
+      );
+
       const formData = new FormData();
       const fullCaseNumber = `${caseYear}/${caseNumber}`;
       const updatedDoc = { ...document, "رقم القضية": fullCaseNumber };
@@ -200,25 +232,33 @@ const LegalDocumentEdit = () => {
         }
       }
 
-      // الملفات (PDF)
-      files.forEach((f) => formData.append("images", f)); // ملفات موجودة على السيرفر - إرسال كمسارات (string)
-      filesToDelete.forEach((f) => formData.append("imagesToDelete", f)); // ملفات للحذف
-      newFiles.forEach((f) => formData.append("documents", f.file)); // ملفات جديدة للرفع
+      files.forEach((f) => formData.append("images", f));
+      filesToDelete.forEach((f) => formData.append("imagesToDelete", f));
+      newFiles.forEach((f) => formData.append("documents", f.file));
 
-      // ارسال plaintiffs كمصفوفة JSON
-      formData.append("plaintiffs", JSON.stringify(document.plaintiffs || []));
+      formData.append("plaintiffs", JSON.stringify(validPlaintiffs));
+      console.log(validPlaintiffs);
 
-      await axios.put(`http://10.128.4.113:5000/legal_documents/${id}`, formData, {
-        headers: {
-          authorization: `Bearer ${token}`,
-          "Content-Type": "multipart/form-data",
-        },
-      });
+      console.log(formData);
+
+      await axios.put(
+        `http://10.128.4.113:5000/legal_documents/${id}`,
+        formData,
+        {
+          headers: {
+            authorization: `Bearer ${token}`,
+            "Content-Type": "multipart/form-data",
+          },
+        }
+      );
 
       setModalMessage("تم تحديث المستند بنجاح");
       setModalSeverity("success");
       setModalOpen(true);
+      setTimeout(() => navigate("/dashboard/legal_documents"), 1500);
     } catch (err) {
+      console.log(err);
+
       setModalMessage("حدث خطأ أثناء التحديث");
       setModalSeverity("error");
       setModalOpen(true);
@@ -341,7 +381,12 @@ const LegalDocumentEdit = () => {
 
             if (label === "رقم القضية")
               return (
-                <Stack key={label} spacing={1} direction="row" alignItems="center">
+                <Stack
+                  key={label}
+                  spacing={1}
+                  direction="row"
+                  alignItems="center"
+                >
                   <Box sx={{ flex: 1 }}>
                     <Typography level="title-sm" fontWeight="lg">
                       السنة
@@ -373,10 +418,7 @@ const LegalDocumentEdit = () => {
                 </Stack>
               );
 
-            if (
-              label === "تاريخ الكتاب" ||
-              label === "تاريخ الكتاب الصادر"
-            )
+            if (label === "تاريخ الكتاب" || label === "تاريخ الكتاب الصادر")
               return (
                 <Stack key={label} spacing={1}>
                   <Typography level="title-sm" fontWeight="lg">
@@ -412,52 +454,88 @@ const LegalDocumentEdit = () => {
           </Typography>
 
           {document.plaintiffs && document.plaintiffs.length > 0 ? (
-            document.plaintiffs.map((plaintiff, index) => (
-              <Box
-                key={index}
-                sx={{
-                  border: "1px solid #ccc",
-                  borderRadius: 1,
-                  p: 2,
-                  mb: 2,
-                  position: "relative",
-                  textAlign: "right",
-                }}
-              >
-                <Input
-                  label="اسم المدعي"
-                  value={plaintiff.plaintiff_name || ""}
-                  onChange={(e) =>
-                    handlePlaintiffChange(index, "plaintiff_name", e.target.value)
-                  }
-                  required
-                  sx={{ mb: 1 }}
-                />
-                <Input
-                  label="الرقم الوطني"
-                  value={plaintiff.national_id || ""}
-                  onChange={(e) =>
-                    handlePlaintiffChange(index, "national_id", e.target.value)
-                  }
-                  required
-                  inputProps={{ inputMode: "numeric", pattern: "[0-9]*" }}
-                />
-                <Button
-                  color="danger"
-                  variant="soft"
-                  size="sm"
-                  sx={{ position: "absolute", top: 8, left: 8 }}
-                  onClick={() => handlePlaintiffRemove(index)}
+            document.plaintiffs.map((plaintiff, index) => {
+              const isNationalIdValid =
+                plaintiff.national_id === "" ||
+                /^\d{10}$/.test(plaintiff.national_id);
+
+              return (
+                <Box
+                  key={index}
+                  sx={{
+                    border: "1px solid #ccc",
+                    borderRadius: 2,
+                    p: 2,
+                    mb: 2,
+                    backgroundColor: "#f9f9f9",
+                  }}
                 >
-                  حذف
-                </Button>
-              </Box>
-            ))
+                  <Stack direction={{ xs: "column", sm: "row" }} spacing={2}>
+                    <Box sx={{ flex: 2 }}>
+                      <Typography level="body-sm" mb={0.5}>
+                        اسم المدعي
+                      </Typography>
+                      <Input
+                        placeholder="أدخل اسم المدعي"
+                        value={plaintiff.plaintiff_name || ""}
+                        onChange={(e) =>
+                          handlePlaintiffChange(
+                            index,
+                            "plaintiff_name",
+                            e.target.value
+                          )
+                        }
+                        required
+                        fullWidth
+                      />
+                    </Box>
+                    <Box sx={{ flex: 2 }}>
+                      <Typography level="body-sm" mb={0.5}>
+                        الرقم الوطني
+                      </Typography>
+                      <Input
+                        placeholder="رقم مكوّن من 10 أرقام أو اتركه فارغًا"
+                        value={plaintiff.national_id || null}
+                        onChange={(e) =>
+                          handlePlaintiffChange(
+                            index,
+                            "national_id",
+                            e.target.value
+                          )
+                        }
+                        error={!isNationalIdValid}
+                        fullWidth
+                      />
+                      {!isNationalIdValid && (
+                        <Typography color="danger" level="body-xs" mt={0.5}>
+                          الرقم الوطني يجب أن يكون 10 أرقام أو يُترك فارغًا
+                        </Typography>
+                      )}
+                    </Box>
+                    <Box
+                      sx={{
+                        display: "flex",
+                        alignItems: "center",
+                        mt: { xs: 1, sm: 0 },
+                      }}
+                    >
+                      <Button
+                        color="danger"
+                        variant="outlined"
+                        onClick={() => handlePlaintiffRemove(index)}
+                      >
+                        حذف
+                      </Button>
+                    </Box>
+                  </Stack>
+                </Box>
+              );
+            })
           ) : (
             <Typography>لا يوجد مدعين.</Typography>
           )}
 
-          <Button variant="outlined" onClick={handleAddPlaintiff}>
+          <Button variant="soft" onClick={handleAddPlaintiff}>
             إضافة مدعي جديد
           </Button>
 
@@ -572,7 +650,10 @@ const LegalDocumentEdit = () => {
       </Sheet>
 
       {/* مودال التنبيهات */}
-      <Modal open={modalOpen} onClose={() => setModalOpen(false)} closeOnOverlayClick>
+      <Modal
+        open={modalOpen}
+        onClose={() => setModalOpen(false)} // هذه هي الطريقة الصحيحة للتحكم في إغلاق المودال
+      >
         <Sheet
           variant="outlined"
           sx={{

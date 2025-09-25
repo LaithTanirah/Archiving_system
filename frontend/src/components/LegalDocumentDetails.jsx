@@ -240,7 +240,9 @@ const LegalDocumentDetails = () => {
               {document.plaintiffs.map((plaintiff, index) => (
                 <Box key={index} sx={{ ml: 2, mt: 1 }}>
                   <span className="label">الاسم:</span>
-                  <span className="value">{plaintiff.plaintiff_name || "—"}</span>
+                  <span className="value">
+                    {plaintiff.plaintiff_name || "—"}
+                  </span>
                   <br />
                   <span className="label">الرقم الوطني:</span>
                   <span className="value">{plaintiff.national_id || "—"}</span>
@@ -301,7 +303,11 @@ const LegalDocumentDetails = () => {
       </Sheet>
 
       {/* مودالات المعاينة والتأكيد والنتيجة */}
-      <Modal open={pdfPreviewOpen} onClose={closePdfPreview} className="no-print">
+      <Modal
+        open={pdfPreviewOpen}
+        onClose={closePdfPreview}
+        className="no-print"
+      >
         <Sheet
           variant="outlined"
           sx={{
@@ -336,22 +342,78 @@ const LegalDocumentDetails = () => {
         </Sheet>
       </Modal>
 
-      <Modal open={confirmOpen} onClose={() => setConfirmOpen(false)} className="no-print">
-        <Sheet sx={{ maxWidth: 400, p: 3, borderRadius: "md", textAlign: "center" }}>
-          <Typography level="h6" mb={2}>هل أنت متأكد من حذف هذا المستند؟</Typography>
+      <Modal
+        open={confirmOpen}
+        onClose={() => setConfirmOpen(false)}
+        className="no-print"
+        sx={{
+          display: "flex",
+          justifyContent: "center",
+          alignItems: "center",
+          p: 2, // padding داخلي في حال كانت الشاشة صغيرة
+        }}
+      >
+        <Sheet
+          sx={{
+            maxWidth: 400,
+            width: "100%",
+            p: 3,
+            borderRadius: "md",
+            textAlign: "center",
+            backgroundColor: "background.body", // تأكد من أن الخلفية ظاهرة
+            boxShadow: "lg",
+          }}
+        >
+          <Typography level="h6" mb={2}>
+            هل أنت متأكد من حذف هذا المستند؟
+          </Typography>
           <Stack direction="row" spacing={2} justifyContent="center">
-            <Button variant="outlined" color="neutral" onClick={() => setConfirmOpen(false)}>إلغاء</Button>
-            <Button color="danger" onClick={handleConfirmDelete}>حذف</Button>
+            <Button
+              variant="outlined"
+              color="neutral"
+              onClick={() => setConfirmOpen(false)}
+            >
+              إلغاء
+            </Button>
+            <Button color="danger" onClick={handleConfirmDelete}>
+              حذف
+            </Button>
           </Stack>
         </Sheet>
       </Modal>
 
-      <Modal open={resultOpen} onClose={handleCloseResult} className="no-print">
-        <Sheet sx={{ maxWidth: 400, p: 3, borderRadius: "md", textAlign: "center" }}>
-          <Typography level="h6" mb={2} color={resultError ? "danger" : "success"}>
+      <Modal
+        open={resultOpen}
+        onClose={handleCloseResult}
+        className="no-print"
+        sx={{
+          display: "flex",
+          justifyContent: "center",
+          alignItems: "center",
+          p: 2,
+        }}
+      >
+        <Sheet
+          sx={{
+            maxWidth: 400,
+            width: "100%",
+            p: 3,
+            borderRadius: "md",
+            textAlign: "center",
+            backgroundColor: "background.body",
+            boxShadow: "lg",
+          }}
+        >
+          <Typography
+            level="h6"
+            mb={2}
+            color={resultError ? "danger" : "success"}
+          >
             {resultError ? "خطأ" : "نجاح"}
           </Typography>
+
           <Typography mb={3}>{resultMessage}</Typography>
+
           <Button onClick={handleCloseResult}>حسناً</Button>
         </Sheet>
       </Modal>
