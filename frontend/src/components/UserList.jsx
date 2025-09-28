@@ -68,7 +68,7 @@ const UserList = () => {
   }, [search, users]);
 
   const handleEdit = (id) => {
-    console.log("تعديل المستخدم:", id);
+
   };
 
   const handleDelete = (id) => {

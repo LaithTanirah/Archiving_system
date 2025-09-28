@@ -145,6 +145,7 @@ const CaseForm = () => {
     const newPlaintiffs = [...plaintiffs];
     newPlaintiffs[index][field] = value;
     setPlaintiffs(newPlaintiffs);
+
   };
 
   const addPlaintiff = () => {
@@ -219,6 +220,7 @@ const CaseForm = () => {
     }
 
     const data = new FormData();
+
     for (const [arKey, enKey] of Object.entries(fieldMap)) {
       if (arKey === "اسم المحكمة") {
         data.append("court_id", formData["court_id"] || "");
@@ -229,10 +231,10 @@ const CaseForm = () => {
     data.append("case_number", `${caseYear}/${caseNumberPart}`);
 
     plaintiffs
-      .filter((p) => p.plaintiff_name && /^\d{10}$/.test(p.national_id))
+      .filter((p) => p.plaintiff_name) // أي مدعي عنده اسم
       .forEach((p, idx) => {
         data.append(`plaintiffs[${idx}][plaintiff_name]`, p.plaintiff_name);
-        data.append(`plaintiffs[${idx}][national_id]`, p.national_id);
+        data.append(`plaintiffs[${idx}][national_id]`, p.national_id || "");
       });
 
     images.forEach((file) => data.append("documents", file));
@@ -244,6 +246,8 @@ const CaseForm = () => {
           "Content-Type": "multipart/form-data",
         },
       });
+
+
       setMessage("تم إرسال البيانات بنجاح!");
       setMessageType("success");
       setOpen(true);
@@ -460,7 +464,11 @@ const CaseForm = () => {
               )}
             </FormControl>
 
-            <Button type="submit" color="primary" size="lg">
+            <Button
+              type="submit"
+              color="primary"
+              size="lg"
+            >
               تأكيد البيانات
             </Button>
           </Stack>

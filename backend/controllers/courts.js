@@ -3,7 +3,7 @@ const { sql, poolPromise } = require("../models/db");
 // إنشاء محكمة جديدة مع التحقق من الاسم المكرر
 const createCourt = async (req, res) => {
   const { name } = req.body;
-  console.log(name);
+
 
   try {
     const pool = await poolPromise;

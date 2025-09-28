@@ -29,7 +29,7 @@ const CourtsList = () => {
       console.error("فشل في جلب المحاكم:", err.message);
     }
   };
-  console.log(courts);
+
 
   const addCourt = async () => {
     if (!newCourt.trim()) return;

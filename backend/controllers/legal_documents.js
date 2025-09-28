@@ -17,6 +17,7 @@ const createLegalDocuments = async (req, res) => {
     outgoing_document_date,
     plaintiffs = [],
   } = req.body;
+
   const images = req.files || [];
 
   try {
@@ -345,7 +346,6 @@ const searchLegalDocuments = async (req, res) => {
   try {
     const q = req.params.q;
     const pool = await poolPromise;
-    console.log("Search Query:", q);
 
     let query = `
       SELECT 

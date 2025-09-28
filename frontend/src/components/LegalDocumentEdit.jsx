@@ -237,9 +237,9 @@ const LegalDocumentEdit = () => {
       newFiles.forEach((f) => formData.append("documents", f.file));
 
       formData.append("plaintiffs", JSON.stringify(validPlaintiffs));
-      console.log(validPlaintiffs);
 
-      console.log(formData);
+
+
 
       await axios.put(
         `http://10.128.4.113:5000/legal_documents/${id}`,
@@ -257,7 +257,7 @@ const LegalDocumentEdit = () => {
       setModalOpen(true);
       setTimeout(() => navigate("/dashboard/legal_documents"), 1500);
     } catch (err) {
-      console.log(err);
+
 
       setModalMessage("حدث خطأ أثناء التحديث");
       setModalSeverity("error");
@@ -495,7 +495,7 @@ const LegalDocumentEdit = () => {
                       </Typography>
                       <Input
                         placeholder="رقم مكوّن من 10 أرقام أو اتركه فارغًا"
-                        value={plaintiff.national_id || null}
+                        value={plaintiff.national_id || ""}
                         onChange={(e) =>
                           handlePlaintiffChange(
                             index,
